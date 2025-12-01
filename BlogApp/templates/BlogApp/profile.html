@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="profile-card">
+
+    <!-- Display messages (e.g., "Profile updated!") -->
+    {% if messages %}
+    {% for message in messages %}
+    <div class="message-success">
+        {{ message }}
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    <!-- Profile update form -->
+    <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <div class="profile-grid">
+
+            <!-- LEFT COLUMN: Picture, Bio, and Stats -->
+            <div class="profile-left">
+                <img src="{{ user.profile.profile_pic.url }}" alt="{{ user.username }}'s profile picture"
+                    class="profile-pic-large">
+
+                <fieldset style="border: none; padding: 0; margin-top: 1.5rem;">
+                    {{ p_form.profile_pic.label_tag }}
+                    {{ p_form.profile_pic }}
+
+                    {{ p_form.bio.label_tag }}
+                    {{ p_form.bio }}
+                </fieldset>
+
+                <!-- --- NEW AUTHOR STATS SECTION --- -->
+                <h3
+                    style="text-align: left; margin-top: 2rem; border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem;">
+                    Author Stats</h3>
+                <ul class="profile-stats">
+                    <li>
+                        <span>Total Posts</span>
+                        <span>{{ post_count }}</span>
+                    </li>
+                    <li>
+                        <span>Total Likes Received</span>
+                        <span>{{ total_likes }}</span>
+                    </li>
+                    <li>
+                        <span>Total Comments Received</span>
+                        <span>{{ total_comments }}</span>
+                    </li>
+                    <li>
+                        <span>Followers</span>
+                        <span>{{ follower_count }}</span>
+                    </li>
+                    <li>
+                        <span>Following</span>
+                        <span>{{ following_count }}</span>
+                    </li>
+                </ul>
+                <!-- --- END STATS SECTION --- -->
+            </div>
+
+            <!-- RIGHT COLUMN: Editable Account Details -->
+            <div class="profile-right">
+                <fieldset>
+                    <legend>Account Details</legend>
+                    {{ u_form.as_p }} <!-- User form (username, email, first/last) -->
+                </fieldset>
+            </div>
+
+        </div> <!-- end .profile-grid -->
+
+        <button type="submit" style="margin-top: 2rem; width: 100%;">Update Profile</button>
+
+    </form>
+</div>
+{% endblock %}

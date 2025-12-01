@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    
+    <!-- This title will now be centered inside the .container -->
+    <h1 class="grid-title">All Posts</h1>
+    
+    <!-- 
+      THIS IS THE KEY PART:
+      It looks for a variable named 'posts'.
+    -->
+    {% for post in posts %}
+        <a href="{% url 'post_detail' post.pk %}" class="post-link">
+            <!-- 
+              We are now re-using the standard .post card
+              for a clean, single-column list.
+            -->
+            <div class="post">
+                {% if post.cover_image %}
+                    <img src="{{ post.cover_image.url }}" alt="{{ post.title }}'s cover image" class="post-list-img">
+                {% endif %}
+
+                <h2>{{ post.title }}</h2>
+                <p class="post-meta">
+                    By <a href="{% url 'public_profile' post.author.username %}">{{ post.author.username }}</a> on {{ post.created_at|date:"F d, Y" }}
+                </p>
+                <p>{{ post.content|truncatewords:40 }}</p>
+                
+                <div style="clear: both;"></div>
+            </div>
+        </a>
+    
+    <!-- 
+      If the 'posts' variable is empty,
+      this 'empty' tag will run.
+    -->
+    {% empty %}
+        <p>No posts have been written yet.</p>
+    {% endfor %}
+
+{% endblock %}

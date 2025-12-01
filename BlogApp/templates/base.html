@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Django Blog</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css" rel="stylesheet">
+
+    <style>
+        /* --- 1. Variables (Our new color palette) --- */
+        :root {
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --border-color: #dee2e6;
+            --text-color: #212529;
+            --text-light: #6c757d;
+            --accent-color: #007bff;
+            --accent-hover: #0056b3;
+            --danger-color: #dc3545;
+            --font-family: 'Inter', sans-serif;
+        }
+
+        /* --- 2. General Reset & Body --- */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            padding-top: 80px; /* Space for the fixed nav */
+        }
+        h1, h2, h3, h4, h5, h6 {
+            margin-bottom: 0.75rem;
+            font-weight: 700;
+        }
+        p {
+            margin-bottom: 1rem;
+        }
+        a {
+            color: var(--accent-color);
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+        a:hover {
+            color: var(--accent-hover);
+        }
+        hr {
+            border: 0;
+            border-top: 1px solid var(--border-color);
+            margin: 1.5rem 0;
+        }
+
+        /* --- 3. New Navigation Bar --- */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background-color: var(--card-bg);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1rem 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            z-index: 1000;
+        }
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .nav-logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-color);
+            text-decoration: none;
+        }
+        .nav-links {
+            display: flex;
+            gap: 1.5rem;
+            align-items: center;
+        }
+        .nav-links a {
+            color: var(--text-light);
+            font-weight: 500;
+        }
+        .nav-links a:hover {
+            color: var(--accent-color);
+        }
+        .nav-profile-pic {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--border-color);
+        }
+
+        /* --- 4. Main Content & Cards --- */
+        /* This container class now applies to *all* pages */
+        .container {
+            max-width: 900px;
+            margin: 2rem auto;
+            padding: 0 1.5rem;
+        }
+        .post,
+        .form-container {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        .post-meta {
+            color: var(--text-light);
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+
+        /* --- 5. New Modern Buttons --- */
+        button,
+        .button {
+            display: inline-block;
+            width: 100%;
+            padding: 0.85rem;
+            border: none;
+            border-radius: 5px;
+            background-color: var(--accent-color);
+            color: white;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            text-align: center;
+            text-decoration: none;
+            transition: background-color 0.2s ease-in-out;
+        }
+        button:hover,
+        .button:hover {
+            background-color: var(--accent-hover);
+        }
+        button[style*="background-color: #dc3545;"] {
+            background-color: var(--danger-color) !important;
+        }
+
+        /* --- 6. New Modern Forms --- */
+        .form-container {
+            max-width: 600px; /* Give forms a bit more space */
+            margin: 2rem auto;
+        }
+        .form-container h2 {
+            text-align: center;
+            margin-top: 0;
+            margin-bottom: 1.5rem;
+        }
+        input[type="text"],
+        input[type="password"],
+        input[type="email"],
+        input[type="file"],
+        textarea {
+            width: 100%;
+            padding: 0.75rem;
+            margin-bottom: 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            font-family: 'Inter', sans-serif;
+            font-size: 1rem;
+        }
+        input[type="file"] {
+            padding: 0.5rem;
+        }
+        textarea {
+            min-height: 150px;
+            resize: vertical;
+        }
+        .form-container p {
+            margin-bottom: 1rem;
+        }
+        .form-container p label {
+            display: block;
+            margin-bottom: 0.25rem;
+            font-weight: 500;
+        }
+
+        /* ========================================
+        === CSS FOR OUR EXISTING FEATURES
+        ========================================
+        */
+        
+        /* --- This is the H1/H2 title that spans a grid --- */
+        .grid-title {
+            grid-column: 1 / -1; /* This is the key: it spans all columns */
+            margin-bottom: 0;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 0.5rem;
+        }
+
+        /* --- HOMEPAGE GRIDS (REMOVED) --- */
+        /* All the .page-grid-container, .more-posts-grid, etc. CSS is gone */
+
+        /* --- Clickable Card --- */
+        .post-link {
+            text-decoration: none;
+            color: inherit;
+            display: block;
+            transition: transform 0.2s ease-in-out;
+        }
+        .post-link:hover .post { /* We only need the .post rule now */
+            border-color: var(--accent-color);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+            transform: translateY(-3px);
+        }
+        .post-link:hover h2 {
+            color: var(--accent-color);
+        }
+
+        /* --- Post Images --- */
+        .post-list-img {
+            width: 100%;
+            max-width: 200px;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 5px;
+            float: left;
+            margin-right: 20px;
+            margin-bottom: 10px;
+        }
+        .post-detail-cover {
+            width: 100%;
+            max-height: 450px;
+            height: auto;
+            object-fit: cover;
+            border-radius: 5px;
+            margin-bottom: 1.5rem;
+        }
+        
+        /* --- Vote Buttons --- */
+        .vote-form {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        .vote-button {
+            background-color: #f0f0f0;
+            color: #333;
+            border: 1px solid #ccc;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            width: auto; /* Override full-width button */
+        }
+        .vote-button:hover {
+            background-color: #e0e0e0;
+        }
+        .vote-button.liked {
+            background-color: var(--accent-color);
+            color: white;
+            border-color: var(--accent-hover);
+        }
+        .vote-button.disliked {
+            background-color: var(--danger-color);
+            color: white;
+            border-color: #b02a37;
+        }
+
+        /* --- Profile Page --- */
+        .profile-card {
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            padding: 2rem;
+            max-width: 900px;
+            margin: 2rem auto;
+        }
+        .profile-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+        @media (min-width: 768px) {
+            .profile-grid {
+                grid-template-columns: 1fr 2fr;
+            }
+        }
+        .profile-left {
+            text-align: center;
+        }
+        .profile-pic-large {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 4px solid #eee;
+            margin-bottom: 1rem;
+        }
+        .profile-right fieldset {
+            border: none;
+            padding: 0;
+            margin: 0;
+        }
+        .profile-right legend {
+            font-size: 1.5rem;
+            font-weight: 500;
+            border-bottom: 2px solid var(--border-color);
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            width: 100%;
+        }
+        .profile-stats {
+            list-style: none;
+            padding: 0;
+            margin-top: 1.5rem;
+            text-align: left;
+        }
+        .profile-stats li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.95rem;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .profile-stats li:first-child {
+            border-top: 1px solid var(--border-color);
+        }
+        .profile-stats span:first-child {
+            font-weight: 500;
+            color: #555;
+        }
+        .profile-stats span:last-child {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: var(--accent-color);
+        }
+
+        /* --- Follow Button --- */
+        .follow-button {
+            background-color: var(--accent-color);
+            color: white;
+            padding: 0.6rem 1.25rem;
+            border: none;
+            border-radius: 5px;
+            font-weight: 500;
+            font-size: 0.95rem;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: background-color 0.2s ease;
+            width: 100%;
+        }
+        .follow-button:hover {
+            background-color: var(--accent-hover);
+        }
+        .follow-button.unfollow {
+            background-color: #f0f0f0;
+            color: #333;
+            border: 1px solid #ccc;
+        }
+        .follow-button.unfollow:hover {
+            background-color: #e0e0e0;
+        }
+        
+        /* --- Crop Modal --- */
+        .crop-modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.7);
+            padding-top: 50px;
+        }
+        .crop-modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 700px;
+        }
+        .img-crop-container {
+            max-height: 500px;
+            overflow: hidden;
+        }
+        #image-to-crop {
+            max-width: 100%;
+        }
+        #crop-button {
+            margin-top: 15px;
+            width: 100%;
+        }
+
+        /* --- Username Validation --- */
+        #username-feedback {
+            font-size: 0.9rem;
+            font-weight: 500;
+            margin-top: -0.75rem;
+            margin-bottom: 1rem;
+            display: block;
+            height: 1.2rem;
+        }
+        .username-available {
+            color: #28a745;
+        }
+        .username-unavailable {
+            color: var(--danger-color);
+        }
+
+        /* --- Password Validation --- */
+        #password-rules {
+            font-size: 0.9rem;
+            margin-top: -0.75rem;
+            margin-bottom: 1rem;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+        }
+        .rule {
+            color: var(--danger-color);
+            transition: color 0.3s ease;
+            margin-bottom: 0.25rem !important;
+        }
+        .rule::before {
+            content: '✖ ';
+            font-weight: bold;
+        }
+        .rule.valid {
+            color: #28a745;
+            text-decoration: line-through;
+        }
+        .rule.valid::before {
+            content: '✔ ';
+        }
+
+        /* --- Search Bar --- */
+        .nav-search {
+            display: none;
+        }
+        @media (min-width: 768px) {
+            .nav-search {
+                display: flex;
+                flex-grow: 1;
+                max-width: 400px;
+                margin: 0 1.5rem;
+            }
+            .nav-search input[type="text"] {
+                width: 100%;
+                padding: 0.6rem 0.75rem;
+                margin-bottom: 0;
+                border-top-right-radius: 0;
+                border-bottom-right-radius: 0;
+            }
+            .nav-search button {
+                padding: 0.6rem 0.75rem;
+                border-top-left-radius: 0;
+                border-bottom-left-radius: 0;
+                width: auto;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    
+    <nav>
+        <div class="nav-container">
+            <a href="{% url 'post_list' %}" class="nav-logo">Django Blog</a>
+            
+            <form action="{% url 'search_results' %}" method="GET" class="nav-search">
+                <input type="text" name="q" placeholder="Search posts..." required>
+                <button type="submit">Search</button>
+            </form>
+            
+            <div class="nav-links">
+                {% if user.is_authenticated %}
+                    <span>Hi, {{ user.username }}!</span>
+                    
+                    {% for group in user.groups.all %}
+                        {% if group.name == 'Writers' %}
+                            <a href="{% url 'create_post' %}">New Post</a>
+                            <a href="{% url 'my_posts' %}">My Posts</a>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    <a href="{% url 'profile' %}">Profile</a>
+                    <a href="{% url 'logout' %}">Logout</a>
+                    
+                    <a href="{% url 'profile' %}">
+                        <img class="nav-profile-pic" src="{{ user.profile.profile_pic.url }}" alt="Profile Pic">
+                    </a>
+                    
+                {% else %}
+                    <a href="{% url 'login' %}">Login</a>
+                    <a href="{% url 'register' %}">Register</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <!-- 
+      THIS IS THE FIX:
+      The .container class is now applied to *all* pages,
+      which centers the homepage list correctly.
+    -->
+    <main class="container">
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
+    
+</body>
+</html>

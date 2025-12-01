@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    
+    <h1 style="margin-bottom: 0.5rem;">Search Results</h1>
+    
+    {% if query %}
+        <p style="font-size: 1.25rem; color: var(--text-light); margin-bottom: 2rem;">
+            You searched for: <strong>"{{ query }}"</strong>
+        </p>
+
+        {% for post in results %}
+            <!-- We re-use the .post-link and .post styles -->
+            <a href="{% url 'post_detail' post.pk %}" class="post-link">
+                <div class="post" style="padding: 1.5rem;">
+                    
+                    {% if post.cover_image %}
+                        <img src="{{ post.cover_image.url }}" alt="{{ post.title }}'s cover image" class="post-list-img">
+                    {% endif %}
+
+                    <h2>{{ post.title }}</h2>
+                    <p class="post-meta">
+                        By <a href="{% url 'public_profile' post.author.username %}">{{ post.author.username }}</a> on {{ post.created_at|date:"F d, Y" }}
+                    </p>
+                    <p>{{ post.content|truncatewords:40 }}</p>
+                    
+                    <div style="clear: both;"></div>
+                </div>
+            </a>
+        {% empty %}
+            <!-- This shows if the 'results' list is empty -->
+            <div class="post">
+                <h2>No results found</h2>
+                <p>We couldn't find any posts matching your search. Please try a different term.</p>
+            </div>
+        {% endfor %}
+    
+    {% else %}
+        <!-- This shows if the user just went to /search/ with no query -->
+        <div class="post">
+            <p>Please enter a search term in the navigation bar.</p>
+        </div>
+    {% endif %}
+
+{% endblock %}

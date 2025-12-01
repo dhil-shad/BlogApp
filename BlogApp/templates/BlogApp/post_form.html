@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <div class="form-container">
+        <!-- The 'type' variable comes from the view -->
+        <h2 style="text-align: left;">{{ type }} Post</h2>
+
+        <!-- This is the original form -->
+        <form method="POST" enctype="multipart/form-data" id="post-form">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit">Save Post</button>
+        </form>
+    </div>
+
+    <!-- --- CROPPER MODAL --- -->
+    <div id="crop-modal" class="crop-modal">
+        <div class="crop-modal-content">
+            <h3>Crop Your Image</h3>
+            <p>Select the best 16:9 area for your cover image.</p>
+            <div class="img-crop-container">
+                <img id="image-to-crop" src="">
+            </div>
+            <button id="crop-button" type="button">Crop & Save</button>
+        </div>
+    </div>
+    <!-- --- END OF MODAL --- -->
+
+
+    <!-- --- JAVASCRIPT LOGIC --- -->
+    <script>
+        // Get all the elements
+        // 'id_cover_image' is the default ID Django gives to the 'cover_image' form field
+        const fileInput = document.getElementById('id_cover_image'); 
+        const modal = document.getElementById('crop-modal');
+        const image = document.getElementById('image-to-crop');
+        const cropButton = document.getElementById('crop-button');
+        let cropper;
+        let originalFileName; // To store the file name
+
+        // 1. Listen for a file to be selected
+        fileInput.addEventListener('change', (e) => {
+            const files = e.target.files;
+            if (files && files.length > 0) {
+                const file = files[0];
+                originalFileName = file.name; // Save the name
+
+                // Use FileReader to show a preview
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    image.src = event.target.result;
+                    modal.style.display = 'block'; // Show the modal
+
+                    // 2. Initialize Cropper.js
+                    if (cropper) {
+                        cropper.destroy(); // Destroy old instance if it exists
+                    }
+                    cropper = new Cropper(image, {
+                        aspectRatio: 16 / 9, // Enforce 16:9 ratio
+                        viewMode: 1, // Restrict crop box to canvas
+                        background: false,
+                    });
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // 3. Listen for the crop button click
+        cropButton.addEventListener('click', () => {
+            if (cropper) {
+                // 4. Get the cropped image as a canvas
+                const canvas = cropper.getCroppedCanvas({
+                    width: 1280,  // Standard 16:9 width
+                    height: 720, // Standard 16:9 height
+                    imageSmoothingQuality: 'high',
+                });
+
+                // 5. Convert canvas to a 'blob' (binary image data)
+                canvas.toBlob((blob) => {
+                    // 6. Create a new File object from the blob
+                    const croppedFile = new File([blob], originalFileName, {
+                        type: 'image/jpeg',
+                        lastModified: Date.now(),
+                    });
+
+                    // 7. This is the magic:
+                    // Create a new DataTransfer object to hold our new file
+                    const dataTransfer = new DataTransfer();
+                    dataTransfer.items.add(croppedFile);
+
+                    // 8. Assign this new file list to our original file input
+                    // This replaces the user's original upload with our cropped version
+                    fileInput.files = dataTransfer.files;
+
+                    // 9. Hide the modal and clean up
+                    modal.style.display = 'none';
+                    cropper.destroy();
+                    cropper = null;
+
+                }, 'image/jpeg', 0.9); // 0.9 is 90% quality
+            }
+        });
+
+        // Close modal if clicking outside
+        modal.addEventListener('click', () => {
+            modal.style.display = 'none';
+            if (cropper) {
+                cropper.destroy();
+                cropper = null;
+            }
+        });
+        
+        // Prevent the modal from closing if clicking *inside* the content
+        document.querySelector('.crop-modal-content').addEventListener('click', (e) => {
+            e.stopPropagation();
+        });
+
+    </script>
+{% endblock %}

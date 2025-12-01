@@ -1,0 +1,186 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <div class="form-container">
+        <h2>Register as a Writer</h2>
+        
+        <form method="POST">
+            {% csrf_token %}
+            
+            <!-- Display non-field errors (like "passwords don't match") -->
+            {% if form.non_field_errors %}
+                <div style="color: var(--danger-color); margin-bottom: 1rem; font-weight: 500;">
+                    {{ form.non_field_errors }}
+                </div>
+            {% endif %}
+
+            <!-- Manual rendering of the "username" field -->
+            <p>
+                <label for="{{ form.username.id_for_label }}">Username:</label>
+                {{ form.username }}
+                <span id="username-feedback"></span> <!-- This is from our previous feature -->
+                
+                {% if form.username.errors %}
+                    <div style="color: var(--danger-color); font-size: 0.9rem; margin-top: 0.25rem;">
+                        {{ form.username.errors }}
+                    </div>
+                {% endif %}
+            </p>
+            
+            <!-- Manual rendering of the "email" field -->
+            <p>
+                <label for="{{ form.email.id_for_label }}">Email:</label>
+                {{ form.email }}
+                
+                {% if form.email.errors %}
+                    <div style="color: var(--danger-color); font-size: 0.9rem; margin-top: 0.25rem;">
+                        {{ form.email.errors }}
+                    </div>
+                {% endif %}
+            </p>
+
+            <!-- 
+              FIXED: Manual rendering of the "password" field
+              It is 'password' (from UserCreationForm) or 'password1' (from SetPasswordForm).
+              The UserCreationForm uses 'password' for the first field internally in some versions, 
+              but the field name is 'password'. Let's check the form.
+              
+              Ah, I see. The UserCreationForm fields are 'password' and 'password2'.
+              My code from before was:
+              {{ form.password.id_for_label }} -> this should be form.password.id_for_label
+              {{ form.password }} -> this should be form.password
+              
+              Wait, no, the default Django UserCreationForm uses 'password' and 'password2'.
+              My previous code *was* correct.
+              
+              Let me re-read the Django docs.
+              Ah! No! The default `UserCreationForm` has `password`**`1`** and `password`**`2`**.
+              
+              This is the fix.
+            -->
+
+            <!-- Manual rendering of the "password" field (FIXED) -->
+            <p>
+                <label for="{{ form.password1.id_for_label }}">Password:</label>
+                {{ form.password1 }} <!-- This was 'form.password', which was wrong -->
+                
+                {% if form.password1.errors %}
+                    <div style="color: var(--danger-color); font-size: 0.9rem; margin-top: 0.25rem;">
+                        {{ form.password1.errors }}
+                    </div>
+                {% endif %}
+            </p>
+
+            <!-- HERE IS OUR NEW REAL-TIME CHECKLIST -->
+            <div id="password-rules">
+                <p class="rule" id="rule-length">At least 8 characters long</p>
+                <p class="rule" id="rule-number">Contains at least one number (0-9)</p>
+                <p class="rule" id="rule-upper">Contains at least one uppercase letter (A-Z)</p>
+                <p class="rule" id="rule-lower">Contains at least one lowercase letter (a-z)</p>
+            </div>
+
+            <!-- Manual rendering of the "password confirmation" field -->
+            <p>
+                <label for="{{ form.password2.id_for_label }}">Password confirmation:</label>
+                {{ form.password2 }}
+                
+                {% if form.password2.errors %}
+                    <div style="color: var(--danger-color); font-size: 0.9rem; margin-top: 0.25rem;">
+                        {{ form.password2.errors }}
+                    </div>
+                {% endif %}
+            </p>
+            
+            <button type="submit">Register</button>
+        </form>
+        
+        <p style="margin-top: 1.5rem; text-align: center;">
+            Already have an account? <a href="{% url 'login' %}">Login here</a>.
+        </p>
+    </div>
+
+
+    <!-- 
+      SCRIPT 1: USERNAME CHECKER (This is your existing script)
+    -->
+    <script>
+        const usernameInput = document.getElementById('id_username');
+        const feedbackEl = document.createElement('span');
+        feedbackEl.id = 'username-feedback';
+        usernameInput.parentNode.insertBefore(feedbackEl, usernameInput.nextSibling);
+
+        usernameInput.addEventListener('input', function() {
+            const username = usernameInput.value;
+            if (username.length < 3) {
+                feedbackEl.textContent = '';
+                return;
+            }
+            fetch(`/check-username/?username=${encodeURIComponent(username)}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.is_available) {
+                        feedbackEl.textContent = 'Username available! ✔';
+                        feedbackEl.className = 'username-available';
+                    } else {
+                        feedbackEl.textContent = 'Username is already taken ✖';
+                        feedbackEl.className = 'username-unavailable';
+                    }
+                })
+                .catch(error => console.error('Error checking username:', error));
+        });
+    </script>
+
+
+    <!-- 
+      SCRIPT 2: PASSWORD CHECKER (FIXED)
+    -->
+    <script>
+        // 1. Get password input and all the rule elements
+        // THIS IS THE FIX: 'id_password' becomes 'id_password1'
+        const passwordInput = document.getElementById('id_password1'); 
+        
+        const ruleLength = document.getElementById('rule-length');
+        const ruleNumber = document.getElementById('rule-number');
+        const ruleUpper = document.getElementById('rule-upper');
+        const ruleLower = document.getElementById('rule-lower');
+        
+        // 2. Define the patterns (Regular Expressions)
+        const hasNumber = /\d/;
+        const hasUpper = /[A-Z]/;
+        const hasLower = /[a-z]/;
+
+        // 3. Add the event listener to check on every key press
+        passwordInput.addEventListener('input', () => {
+            const password = passwordInput.value;
+
+            // Check 1: Length
+            if (password.length >= 8) {
+                ruleLength.classList.add('valid');
+            } else {
+                ruleLength.classList.remove('valid');
+            }
+
+            // Check 2: Number
+            if (hasNumber.test(password)) {
+                ruleNumber.classList.add('valid');
+            } else {
+                ruleNumber.classList.remove('valid');
+            }
+
+            // Check 3: Uppercase
+            if (hasUpper.test(password)) {
+                ruleUpper.classList.add('valid');
+            } else {
+                ruleUpper.classList.remove('valid');
+            }
+
+            // Check 4: Lowercase
+            if (hasLower.test(password)) {
+                ruleLower.classList.add('valid');
+            } else {
+                ruleLower.classList.remove('valid');
+            }
+        });
+    </script>
+
+{% endblock %}

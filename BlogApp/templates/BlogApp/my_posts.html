@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h1>My Posts</h1>
+    
+    {% for post in posts %}
+        <div class="post">
+            
+            {% if post.cover_image %}
+                <img src="{{ post.cover_image.url }}" alt="{{ post.title }}'s cover image" class="post-list-img">
+            {% endif %}
+
+            <h2>{{ post.title }}</h2>
+            
+            <p class="post-meta">Published on {{ post.created_at|date:"F d, Y" }}</p>
+            
+            <p>
+                <a href="{% url 'post_detail' post.pk %}" style="color: #007bff;">View Post</a> |
+                <a href="{% url 'update_post' post.pk %}" style="color: #1a8a2d;">Edit</a> |
+                <a href="{% url 'delete_post' post.pk %}" style="color: #dc3545;">Delete</a>
+            </p>
+            
+            <div style="clear: both;"></div>
+        </div>
+    {% empty %}
+        <p>You haven't written any posts yet.</p>
+        <a href="{% url 'create_post' %}" class="button" style="display: inline-block; width: auto; text-decoration: none;">Write your first post</a>
+    {% endfor %}
+{% endblock %}

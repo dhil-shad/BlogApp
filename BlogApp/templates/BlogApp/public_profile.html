@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="profile-card">
+    
+    <form method="POST" action="{% url 'follow_user' profile_user.username %}">
+        {% csrf_token %}
+        <div class="profile-grid">
+            
+            <!-- LEFT COLUMN: Picture, Bio, and Stats -->
+            <div class="profile-left">
+                <img src="{{ profile.profile_pic.url }}" 
+                     alt="{{ profile_user.username }}'s profile picture" 
+                     class="profile-pic-large">
+                
+                <h2 style="text-align: center; margin-top: 1rem; margin-bottom: 0.5rem;">
+                    {{ profile_user.username }}
+                </h2>
+                
+                {% if profile_user.first_name and profile_user.last_name %}
+                    <p style="text-align: center; color: var(--text-light); margin-top: 0;">
+                        {{ profile_user.first_name }} {{ profile_user.last_name }}
+                    </p>
+                {% endif %}
+
+                {% if profile.bio %}
+                    <p style="text-align: left; font-size: 0.95rem; border-top: 1px solid #eee; padding-top: 1rem;">
+                        {{ profile.bio }}
+                    </p>
+                {% endif %}
+
+                <!-- Follow / Unfollow Button -->
+                {% if user.is_authenticated %}
+                    {% if user == profile_user %}
+                        <a href="{% url 'profile' %}" class="follow-button unfollow">Edit Your Profile</a>
+                    {% else %}
+                        {% if is_following %}
+                            <button type="submit" class="follow-button unfollow">Unfollow</button>
+                        {% else %}
+                            <button type="submit" class="follow-button">Follow</button>
+                        {% endif %}
+                    {% endif %}
+                {% else %}
+                    <a href="{% url 'login' %}?next={{ request.path }}" class="follow-button">Login to Follow</a>
+                {% endif %}
+
+                <!-- Author Stats Section -->
+                <h3 style="text-align: left; margin-top: 2rem; border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem;">Author Stats</h3>
+                <ul class="profile-stats">
+                    <li>
+                        <span>Total Posts</span>
+                        <span>{{ post_count }}</span>
+                    </li>
+                    <li>
+                        <span>Total Likes Received</span>
+                        <span>{{ total_likes }}</span>
+                    </li>
+                    <li>
+                        <span>Followers</span>
+                        <span>{{ follower_count }}</span>
+                    </li>
+                    <li>
+                        <span>Following</span>
+                        <span>{{ following_count }}</span>
+                    </li>
+                </ul>
+            </div>
+            
+            <!-- RIGHT COLUMN: User's Posts -->
+            <div class="profile-right">
+                <fieldset>
+                    <legend>{{ profile_user.username }}'s Posts</legend>
+                </fieldset>
+                
+                {% for post in posts %}
+                    <a href="{% url 'post_detail' post.pk %}" class="post-link" style="text-decoration: none; color: inherit;">
+                        <div class="post" style="padding: 1.5rem; margin-bottom: 1rem;">
+                            {% if post.cover_image %}
+                                <img src="{{ post.cover_image.url }}" alt="{{ post.title }}'s cover image" class="post-list-img" style="max-width: 120px; height: 80px;">
+                            {% endif %}
+                            <h2 style="font-size: 1.25rem;">{{ post.title }}</h2>
+                            <p class="post-meta" style="font-size: 0.85rem;">{{ post.created_at|date:"F d, Y" }}</p>
+                            <div style="clear: both;"></div>
+                        </div>
+                    </a>
+                {% empty %}
+                    <p>{{ profile_user.username }} hasn't written any posts yet.</p>
+                {% endfor %}
+            </div>
+
+        </div> <!-- end .profile-grid -->    
+    </form>
+</div>
+{% endblock %}

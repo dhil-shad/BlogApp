@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="post">
+
+    {% if post.cover_image %}
+    <!-- 
+              THIS IS THE CHANGE: 
+              Add class="post-detail-cover" to the img tag 
+            -->
+    <img class="post-detail-cover" src="{{ post.cover_image.url }}" alt="{{ post.title }}'s cover image">
+    {% endif %}
+    <h1>{{ post.title }}</h1>
+    <!-- THIS IS CORRECT -->
+<p class="post-meta">
+    By <a href="{% url 'public_profile' post.author.username %}">{{ post.author.username }}</a> on {{ post.created_at|date:"F d, Y" }}
+</p>
+
+    {% if post.author == user %}
+    <p>
+        <a href="{% url 'update_post' post.pk %}">Edit Post</a> |
+        <a href="{% url 'delete_post' post.pk %}" style="color: red;">Delete Post</a>
+    </p>
+    {% endif %}
+
+    <hr style="margin: 1.5rem 0;">
+    <p>{{ post.content|linebreaks }}</p>
+</div>
+
+<div class="post">
+    <h3>Comments ({{ comments.count }})</h3>
+
+    {% for comment in comments %}
+    <div class="comment">
+        <p>{{ comment.body }}</p>
+        <small>By {{ comment.author.username }} on {{ comment.created_at|date:"F d, Y" }}</small>
+    </div>
+    {% empty %}
+    <p>No comments yet.</p>
+    {% endfor %}
+
+    <hr style="margin: 1.5rem 0;">
+
+    {% if user.is_authenticated %}
+    <h4>Add a comment:</h4>
+    <form method="POST">
+        {% csrf_token %}
+        {{ comment_form.as_p }}
+        <button type="submit">Post Comment</button>
+    </form>
+    {% else %}
+    <p><a href="{% url 'login' %}?next={{ request.path }}">Log in</a> to add a comment.</p>
+    {% endif %}
+
+
+    {% if post.author == user %}
+    <p>
+        <a href="{% url 'update_post' post.pk %}">Edit Post</a> |
+        <a href="{% url 'delete_post' post.pk %}" style="color: red;">Delete Post</a>
+    </p>
+    {% endif %}
+
+    {% if user.is_authenticated %}
+    <form class="vote-form" action="{% url 'post_vote' post.pk %}" method="POST">
+        {% csrf_token %}
+
+        <button type="submit" name="vote" value="like"
+            class="vote-button {% if user in post.likes.all %}liked{% endif %}">
+            &#128077; Like ({{ post.likes.count }})
+        </button>
+
+        <button type="submit" name="vote" value="dislike"
+            class="vote-button {% if user in post.dislikes.all %}disliked{% endif %}">
+            &#128078; Dislike ({{ post.dislikes.count }})
+        </button>
+    </form>
+    {% else %}
+    <div class="vote-form">
+        <span>&#128077; Likes: {{ post.likes.count }}</span>
+        <span>&#128078; Dislikes: {{ post.dislikes.count }}</span>
+    </div>
+    <p><a href="{% url 'login' %}?next={{ request.path }}">Log in</a> to vote.</p>
+    {% endif %}
+    <hr style="margin: 1.5rem 0;">
+    <p>{{ post.content|linebreaks }}</p>
+</div>
+{% endblock %}
